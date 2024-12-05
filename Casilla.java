@@ -1,31 +1,25 @@
+package crear;
+
+
 public class Casilla {
-    private boolean tieneMina;
-    private int numeroMinasAdyacentes;
+    private boolean mina;
     private boolean descubierta;
     private boolean marcada;
+    private int minasAdyacentes;
 
-    // Constructor
     public Casilla() {
-        this.tieneMina = false;
-        this.numeroMinasAdyacentes = 0;
+        this.mina = false;
         this.descubierta = false;
         this.marcada = false;
+        this.minasAdyacentes = 0;
     }
 
     public boolean tieneMina() {
-        return tieneMina;
+        return mina;
     }
 
     public void colocarMina() {
-        this.tieneMina = true;
-    }
-
-    public int getNumeroMinasAdyacentes() {
-        return numeroMinasAdyacentes;
-    }
-
-    public void setNumeroMinasAdyacentes(int numeroMinasAdyacentes) {
-        this.numeroMinasAdyacentes = numeroMinasAdyacentes;
+        this.mina = true;
     }
 
     public boolean estaDescubierta() {
@@ -41,17 +35,22 @@ public class Casilla {
     }
 
     public void marcar() {
-        this.marcada = true;
+        this.marcada = !this.marcada;
     }
 
-    public void desmarcar() {
-        this.marcada = false;
+    public int getMinasAdyacentes() {
+        return minasAdyacentes;
     }
 
-    public void resetear() {
-        this.tieneMina = false;
-        this.numeroMinasAdyacentes = 0;
-        this.descubierta = false;
-        this.marcada = false;
+    public void setMinasAdyacentes(int minasAdyacentes) {
+        this.minasAdyacentes = minasAdyacentes;
+    }
+
+    @Override
+    public String toString() {
+        if (marcada) return "F";
+        if (!descubierta) return "-";
+        if (mina) return "X";
+        return minasAdyacentes > 0 ? String.valueOf(minasAdyacentes) : " ";
     }
 }

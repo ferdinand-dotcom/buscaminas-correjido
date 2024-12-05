@@ -1,20 +1,20 @@
+package crear;
+
 import java.util.Random;
 
 public class Tablero {
-    private static final int FILAS = 10;
-    private static final int COLUMNAS = 10;
-    private static final int MINAS = 10;
+    private final int tamaño = 10;
+    private final int numMinas = 10;
     private Casilla[][] casillas;
 
     public Tablero() {
-        casillas = new Casilla[FILAS][COLUMNAS];
+        casillas = new Casilla[tamaño][tamaño];
         inicializarTablero();
     }
 
     private void inicializarTablero() {
-        // Inicializamos todas las casillas
-        for (int i = 0; i < FILAS; i++) {
-            for (int j = 0; j < COLUMNAS; j++) {
+        for (int i = 0; i < tamaño; i++) {
+            for (int j = 0; j < tamaño; j++) {
                 casillas[i][j] = new Casilla();
             }
         }
@@ -26,9 +26,9 @@ public class Tablero {
         Random random = new Random();
         int minasColocadas = 0;
 
-        while (minasColocadas < MINAS) {
-            int fila = random.nextInt(FILAS);
-            int columna = random.nextInt(COLUMNAS);
+        while (minasColocadas < numMinas) {
+            int fila = random.nextInt(tamaño);
+            int columna = random.nextInt(tamaño);
 
             if (!casillas[fila][columna].tieneMina()) {
                 casillas[fila][columna].colocarMina();
@@ -38,55 +38,100 @@ public class Tablero {
     }
 
     private void calcularMinasAdyacentes() {
-        for (int i = 0; i < FILAS; i++) {
-            for (int j = 0; j < COLUMNAS; j++) {
-                if (casillas[i][j].tieneMina()) {
-                    for (int filaAdyacente = -1; filaAdyacente <= 1; filaAdyacente++) {
-                        for (int colAdyacente = -1; colAdyacente <= 1; colAdyacente++) {
-                            int fila = i + filaAdyacente;
-                            int columna = j + colAdyacente;
-
-                            if (fila >= 0 && fila < FILAS && columna >= 0 && columna < COLUMNAS) {
-                                casillas[fila][columna].setNumeroMinasAdyacentes(
-                                        casillas[fila][columna].getNumeroMinasAdyacentes() + 1);
-                            }
-                        }
-                    }
+        for (int i = 0; i < tamaño; i++) {
+            for (int j = 0; j < tamaño; j++) {
+                if (!casillas[i][j].tieneMina()) {
+                    int minas = contarMinasAdyacentes(i, j);
+                    casillas[i][j].setMinasAdyacentes(minas);
                 }
             }
         }
     }
 
-    public Casilla getCasilla(int fila, int columna) {
-        return casillas[fila][columna];
+    private int contarMinasAdyacentes(int fila, int columna) {
+        int[] dx = {-1, -1, -1, 0, 0, 1, 1, 1};
+        int[] dy = {-1, 0, 1, -1, 1, -1, 0, 1};
+        int minas = 0;
+
+        for (int k = 0; k < 8; k++) {
+            int nx = fila + dx[k];
+            int ny = columna + dy[k];
+
+            if (nx >= 0 && nx < tamaño && ny >= 0 && ny < tamaño && casillas[nx][ny].tieneMina()) {
+                minas++;
+            }
+        }
+
+        return minas;
+    }
+
+    public void descubrirCasilla(int fila, int columna) throws MinaException {
+        if (casillas[fila][columna].estaDescubierta()) {
+            throw new IllegalStateException("Casilla ya descubierta.");
+        }
+
+        casillas[fila][columna].descubrir();
+
+        if (casillas[fila][columna].tieneMina()) {
+            throw new MinaException("¡Has pisado una mina!");
+        }
+
+        if (casillas[fila][columna].getMinasAdyacentes() == 0) {
+            descubrirAdyacentes(fila, columna);
+        }
+    }
+
+    private void descubrirAdyacentes(int fila, int columna) {
+        int[] dx = {-1, -1, -1, 0, 0, 1, 1, 1};
+        int[] dy = {-1, 0, 1, -1, 1, -1, 0, 1};
+
+        for (int k = 0; k < 8; k++) {
+            int nx = fila + dx[k];
+            int ny = columna + dy[k];
+
+            if (nx >= 0 && nx < tamaño && ny >= 0 && ny < tamaño && !casillas[nx][ny].estaDescubierta()) {
+                try {
+                    descubrirCasilla(nx, ny);
+                } catch (MinaException e) {
+                    // Ignorar si hay una mina adyacente
+                }
+            }
+        }
+    }
+
+    public void marcarCasilla(int fila, int columna) {
+        casillas[fila][columna].marcar();
+    }
+
+    public void mostrarTablero() {
+        System.out.print("   ");
+        for (int i = 1; i <= tamaño; i++) {
+            System.out.print(i + " ");
+        }
+        System.out.println();
+
+        for (int i = 0; i < tamaño; i++) {
+            System.out.print((char) ('A' + i) + "  ");
+            for (int j = 0; j < tamaño; j++) {
+                System.out.print(casillas[i][j] + " ");
+            }
+            System.out.println();
+        }
     }
 
     public boolean verificarVictoria() {
-        for (int i = 0; i < FILAS; i++) {
-            for (int j = 0; j < COLUMNAS; j++) {
-                if (!casillas[i][j].tieneMina() && !casillas[i][j].estaDescubierta()) {
-                    return false; // Si hay alguna casilla no descubierta que no sea mina
+        for (int i = 0; i < tamaño; i++) {
+            for (int j = 0; j < tamaño; j++) {
+                if (!casillas[i][j].estaDescubierta() && !casillas[i][j].tieneMina()) {
+                    return false;
                 }
             }
         }
         return true;
     }
 
-    public void reiniciarTablero() {
-        for (int i = 0; i < FILAS; i++) {
-            for (int j = 0; j < COLUMNAS; j++) {
-                casillas[i][j].resetear();
-            }
-        }
-        colocarMinas();
-        calcularMinasAdyacentes();
-    }
-
-    public int getFilas() {
-        return FILAS;
-    }
-
-    public int getColumnas() {
-        return COLUMNAS;
-    }
+	public boolean verificarVictoria1() {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }
